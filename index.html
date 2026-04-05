@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astral Match — Tu Astrólogo Personal</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Cinzel:wght@400;600&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --deep:#03030e; --panel:#07071a; --panel2:#0b0b22;
+  --gold:#c9a84c; --gold-light:#e8c97e; --gold-dim:#7a6030;
+  --silver:#a8b4c8; --stardust:#d4dff0; --body-text:#b8c8df;
+  --border:rgba(201,168,76,0.13); --border-h:rgba(201,168,76,0.3);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--deep);color:var(--stardust);font-family:'Raleway',sans-serif;font-weight:300;overflow-x:hidden;cursor:none;min-height:100vh;}
+
+/* CURSOR */
+#cur{width:7px;height:7px;background:var(--gold);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transition:transform .12s ease;box-shadow:0 0 10px var(--gold),0 0 20px rgba(201,168,76,.3);}
+#curR{width:28px;height:28px;border:1px solid rgba(201,168,76,.4);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transition:all .22s ease;}
+
+/* STARFIELD */
+#sf{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+.noise{position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:300;padding:22px 52px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(to bottom,rgba(3,3,14,.96) 50%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid rgba(201,168,76,.06);}
+.logo{font-family:'Cinzel',serif;font-size:.95rem;letter-spacing:.3em;color:var(--gold);text-decoration:none;}
+.nav-r{display:flex;gap:36px;}
+.nav-r a{font-size:.63rem;letter-spacing:.18em;text-transform:uppercase;color:var(--silver);text-decoration:none;opacity:.65;transition:opacity .3s,color .3s;}
+.nav-r a:hover{opacity:1;color:var(--gold-light);}
+
+/* SCREENS */
+.screen{position:relative;z-index:2;min-height:100vh;}
+.screen.hidden{display:none!important;}
+
+/* ═══ LANDING ═══ */
+#sLanding{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:110px 40px 70px;}
+.eyebrow{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.55em;text-transform:uppercase;color:var(--gold);margin-bottom:26px;opacity:0;animation:fadeUp .9s ease .2s forwards;}
+.headline{font-family:'Cormorant Garamond',serif;font-size:clamp(4.2rem,10.5vw,9.5rem);font-weight:300;line-height:.88;opacity:0;animation:fadeUp 1.1s ease .4s forwards;}
+.headline em{font-style:italic;color:var(--gold-light);display:block;}
+.tagline{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.95rem,2.2vw,1.4rem);color:var(--silver);margin-top:26px;max-width:460px;line-height:1.8;opacity:0;animation:fadeUp .9s ease .7s forwards;}
+
+.orbit-wrap{position:relative;width:220px;height:220px;margin:50px auto 42px;opacity:0;animation:fadeIn 1.4s ease .9s forwards;}
+.orbit{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(201,168,76,.2);animation:spinSlow 40s linear infinite;}
+.orbit::before{content:'';position:absolute;inset:13px;border-radius:50%;border:1px solid rgba(201,168,76,.1);}
+.orbit-center{position:absolute;inset:36px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.08),transparent 70%);display:flex;align-items:center;justify-content:center;font-size:1.85rem;}
+.zsym{position:absolute;font-size:.9rem;color:var(--gold-dim);}
+
+.cta-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp .9s ease 1.1s forwards;}
+.btn{font-family:'Cinzel',serif;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;padding:15px 38px;border:none;cursor:none;text-decoration:none;display:inline-block;transition:all .3s;clip-path:polygon(7px 0%,100% 0%,calc(100% - 7px) 100%,0% 100%);}
+.btn-gold{background:linear-gradient(135deg,var(--gold-dim),var(--gold));color:var(--deep);}
+.btn-gold:hover{background:linear-gradient(135deg,var(--gold),var(--gold-light));transform:translateY(-2px);box-shadow:0 8px 28px rgba(201,168,76,.28);}
+.btn-ghost{background:transparent;color:var(--silver);border:1px solid rgba(168,180,200,.28);}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold-light);}
+
+/* ═══ FORM ═══ */
+#sForm{display:flex;align-items:center;justify-content:center;padding:100px 40px 60px;}
+.form-card{width:100%;max-width:800px;background:rgba(7,7,26,.85);border:1px solid var(--border);padding:52px 56px 46px;position:relative;overflow:hidden;backdrop-filter:blur(14px);}
+.form-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% -5%,rgba(201,168,76,.05),transparent 60%);pointer-events:none;}
+.form-card-title{font-family:'Cormorant Garamond',serif;font-size:2.1rem;font-weight:300;margin-bottom:6px;}
+.form-card-title em{font-style:italic;color:var(--gold-light);}
+.form-card-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1rem;color:var(--silver);margin-bottom:44px;line-height:1.7;opacity:.8;}
+
+.ppl-grid{display:grid;grid-template-columns:1fr 48px 1fr;align-items:start;}
+.pcol{display:flex;flex-direction:column;gap:20px;}
+.plabel{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.38em;text-transform:uppercase;color:var(--gold);margin-bottom:2px;}
+
+.sepcol{display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:36px;gap:10px;}
+.sepline{width:1px;height:50px;background:linear-gradient(to bottom,transparent,rgba(201,168,76,.28),transparent);}
+.sepsym{font-family:'Cormorant Garamond',serif;font-size:1.7rem;color:var(--gold);opacity:.3;}
+
+.fld{display:flex;flex-direction:column;gap:5px;}
+.fld label{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--silver);opacity:.6;}
+.fld input,.fld select{background:rgba(255,255,255,.03);border:none;border-bottom:1px solid rgba(201,168,76,.18);color:var(--stardust);font-family:'Cormorant Garamond',serif;font-size:1.05rem;padding:9px 0;outline:none;transition:border-color .3s;width:100%;cursor:none;-webkit-appearance:none;}
+.fld input::placeholder{color:rgba(168,180,200,.22);}
+.fld input:focus,.fld select:focus{border-bottom-color:var(--gold);}
+.fld select option{background:var(--panel);color:var(--stardust);}
+
+.sign-show{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.92rem;color:var(--gold-dim);min-height:1.3em;padding-top:3px;transition:color .4s;}
+.sign-show.lit{color:var(--gold-light);}
+
+.tog-row{display:flex;align-items:center;gap:11px;margin-top:4px;}
+.tog{width:34px;height:19px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.22);border-radius:10px;position:relative;cursor:none;transition:background .3s;}
+.tog.on{background:rgba(201,168,76,.32);border-color:var(--gold);}
+.knob{width:13px;height:13px;background:var(--gold-dim);border-radius:50%;position:absolute;top:2px;left:2px;transition:transform .28s,background .28s;}
+.tog.on .knob{transform:translateX(15px);background:var(--gold);}
+.tog-lbl{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--silver);opacity:.55;}
+.time-flds{display:none;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px;}
+.time-flds.open{display:grid;}
+
+.form-foot{margin-top:44px;padding-top:36px;border-top:1px solid rgba(201,168,76,.07);display:flex;flex-direction:column;align-items:center;gap:14px;}
+.form-note{font-size:.64rem;color:var(--silver);opacity:.38;letter-spacing:.05em;}
+
+/* ═══ CHAT ═══ */
+#sChat{display:flex;flex-direction:column;height:100vh;padding-top:68px;min-height:unset;}
+
+.chat-header{flex-shrink:0;padding:14px 52px;border-bottom:1px solid var(--border);background:rgba(3,3,14,.92);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;}
+.chat-header-left{display:flex;align-items:center;gap:14px;}
+.chat-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,rgba(61,31,110,.8),rgba(139,58,107,.6));border:1px solid rgba(201,168,76,.3);display:flex;align-items:center;justify-content:center;font-size:.9rem;}
+.chat-who-name{font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.2em;color:var(--gold);}
+.chat-who-sub{font-size:.58rem;color:var(--silver);opacity:.45;margin-top:1px;}
+.chat-pair{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.9rem;color:var(--silver);opacity:.6;}
+.chat-back{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--silver);opacity:.45;cursor:none;transition:opacity .3s,color .3s;background:none;border:none;font-family:'Raleway',sans-serif;}
+.chat-back:hover{opacity:1;color:var(--gold-light);}
+
+.chat-msgs{flex:1;overflow-y:auto;padding:32px 0;scroll-behavior:smooth;}
+.chat-msgs::-webkit-scrollbar{width:3px;}
+.chat-msgs::-webkit-scrollbar-thumb{background:rgba(201,168,76,.18);border-radius:2px;}
+
+.msg-wrap{max-width:740px;margin:0 auto;padding:0 52px;display:flex;flex-direction:column;gap:24px;}
+
+.msg{display:flex;gap:14px;align-items:flex-start;animation:msgIn .35s ease forwards;}
+.msg.user{flex-direction:row-reverse;}
+
+.mavatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.8rem;margin-top:3px;}
+.msg.astro .mavatar{background:linear-gradient(135deg,rgba(61,31,110,.7),rgba(139,58,107,.5));border:1px solid rgba(201,168,76,.22);}
+.msg.user .mavatar{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.18);}
+
+.mbubble{flex:1;max-width:620px;}
+.msg.user .mbubble{display:flex;flex-direction:column;align-items:flex-end;}
+
+.mname{font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:7px;color:var(--gold-dim);}
+.msg.user .mname{color:rgba(168,180,200,.4);}
+
+.mbody{font-family:'Cormorant Garamond',serif;font-size:1.07rem;line-height:1.88;color:var(--body-text);}
+.msg.user .mbody{color:var(--silver);font-size:1rem;background:rgba(255,255,255,.04);border:1px solid var(--border);padding:13px 17px;display:inline-block;text-align:left;}
+
+/* Rich text */
+.mbody h3{font-family:'Cormorant Garamond',serif;font-size:1.18rem;font-weight:400;color:var(--stardust);margin:20px 0 7px;padding-bottom:5px;border-bottom:1px solid rgba(201,168,76,.1);}
+.mbody h3:first-child{margin-top:0;}
+.mbody p{margin-bottom:12px;}
+.mbody p:last-of-type{margin-bottom:0;}
+.mbody strong{color:var(--stardust);font-weight:500;}
+.mbody em{color:var(--gold-light);font-style:italic;}
+.mbody .verdict{background:rgba(201,168,76,.06);border-left:2px solid var(--gold-dim);padding:13px 17px;margin:16px 0;font-style:italic;color:var(--gold-light);line-height:1.75;font-size:1.05rem;}
+.mbody ul{list-style:none;margin:8px 0 13px;}
+.mbody ul li{padding:3px 0 3px 16px;position:relative;color:var(--body-text);}
+.mbody ul li::before{content:'✦';position:absolute;left:0;color:var(--gold-dim);font-size:.55rem;top:7px;}
+
+/* score grid */
+.score-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:rgba(201,168,76,.08);margin:18px 0;border:1px solid rgba(201,168,76,.08);}
+.score-cell{background:rgba(3,3,14,.8);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;}
+.score-label{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--silver);opacity:.7;}
+.score-val{font-family:'Cormorant Garamond',serif;font-size:1.25rem;color:var(--gold-light);}
+
+/* quick actions */
+.quick-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px;}
+.qa-btn{font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;padding:10px 18px;background:rgba(201,168,76,.07);border:1px solid var(--border);color:var(--silver);cursor:none;transition:all .28s;clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);}
+.qa-btn:hover:not(:disabled){background:rgba(201,168,76,.14);border-color:var(--gold);color:var(--gold-light);}
+.qa-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+/* typing */
+.typing-row{display:flex;align-items:center;gap:5px;padding:5px 0;}
+.typing-row span{width:5px;height:5px;border-radius:50%;background:var(--gold-dim);animation:typingDot 1.4s ease infinite;}
+.typing-row span:nth-child(2){animation-delay:.2s;}
+.typing-row span:nth-child(3){animation-delay:.4s;}
+
+.chat-div{display:flex;align-items:center;gap:14px;margin:4px 0;}
+.chat-div-line{flex:1;height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,.12),transparent);}
+.chat-div-sym{font-size:.65rem;color:var(--gold-dim);opacity:.5;}
+
+/* INPUT */
+.chat-input-bar{flex-shrink:0;padding:16px 52px 22px;border-top:1px solid var(--border);background:rgba(3,3,14,.95);backdrop-filter:blur(10px);}
+.input-row{display:flex;gap:10px;align-items:flex-end;max-width:740px;margin:0 auto;}
+.input-wrap{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);transition:border-color .3s;}
+.input-wrap:focus-within{border-color:rgba(201,168,76,.32);}
+#chatInput{width:100%;background:transparent;border:none;outline:none;color:var(--stardust);font-family:'Cormorant Garamond',serif;font-size:1.05rem;padding:12px 15px;resize:none;max-height:120px;overflow-y:auto;cursor:none;line-height:1.5;}
+#chatInput::placeholder{color:rgba(168,180,200,.25);}
+.send-btn{width:42px;height:42px;background:linear-gradient(135deg,var(--gold-dim),var(--gold));border:none;cursor:none;display:flex;align-items:center;justify-content:center;transition:all .28s;flex-shrink:0;clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);}
+.send-btn:hover{background:linear-gradient(135deg,var(--gold),var(--gold-light));transform:translateY(-1px);}
+.send-btn svg{width:15px;height:15px;fill:var(--deep);}
+.input-hint{font-size:.57rem;color:var(--silver);opacity:.28;margin-top:7px;text-align:center;letter-spacing:.04em;max-width:740px;margin-left:auto;margin-right:auto;}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spinSlow{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes typingDot{0%,80%,100%{opacity:.2;transform:translateY(0)}40%{opacity:1;transform:translateY(-4px)}}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:700px){
+  nav{padding:18px 24px;} .nav-r{display:none;}
+  .form-card{padding:30px 22px;}
+  .ppl-grid{grid-template-columns:1fr;gap:28px;}
+  .sepcol{flex-direction:row;padding:0;} .sepline{width:40px;height:1px;}
+  .msg-wrap{padding:0 18px;}
+  .chat-header{padding:12px 18px;} .chat-pair{display:none;}
+  .chat-input-bar{padding:12px 18px 18px;}
+  .quick-actions{flex-direction:column;}
+  .score-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="sf"></canvas>
+<div class="noise"></div>
+<div id="cur"></div>
+<div id="curR"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo" onclick="goLanding();return false;">✦ ASTRAL MATCH</a>
+  <div class="nav-r">
+    <a href="#" onclick="goLanding();return false;">Inicio</a>
+    <a href="#">Carta Natal</a>
+    <a href="#">Acceder</a>
+  </div>
+</nav>
+
+<!-- ═══ LANDING ═══ -->
+<div id="sLanding" class="screen">
+  <p class="eyebrow">✦ &nbsp; La astrología al servicio del amor &nbsp; ✦</p>
+  <h1 class="headline">Astral<em>Match</em></h1>
+  <p class="tagline">Habla con tu astrólogo personal. Descubre qué dicen los astros sobre vuestra compatibilidad.</p>
+  <div class="orbit-wrap" id="orbitWrap">
+    <div class="orbit"></div>
+    <div class="orbit-center">☽</div>
+  </div>
+  <div class="cta-row">
+    <button class="btn btn-gold" onclick="goForm()">✦ &nbsp; Iniciar consulta</button>
+    <a href="#" class="btn btn-ghost">Cómo funciona</a>
+  </div>
+</div>
+
+<!-- ═══ FORM ═══ -->
+<div id="sForm" class="screen hidden">
+  <div class="form-card">
+    <h2 class="form-card-title">Tu consulta <em>astral</em></h2>
+    <p class="form-card-sub">Introduce los datos de nacimiento. El astrólogo generará un análisis profundo y podrás seguir la conversación libremente.</p>
+    <div class="ppl-grid">
+      <div class="pcol">
+        <p class="plabel">Primera Persona</p>
+        <div class="fld"><label>Nombre</label><input type="text" id="n1" placeholder="Tu nombre"></div>
+        <div class="fld"><label>Fecha de nacimiento</label><input type="date" id="d1" onchange="autoSign(1)"></div>
+        <div class="sign-show" id="sd1">— ingresa la fecha</div>
+        <div class="tog-row">
+          <div class="tog" id="tog1" onclick="togTime(1)"><div class="knob"></div></div>
+          <span class="tog-lbl">Incluir hora de nacimiento</span>
+        </div>
+        <div class="time-flds" id="tf1">
+          <div class="fld"><label>Hora</label><input type="time" id="t1"></div>
+          <div class="fld"><label>Ciudad</label><input type="text" id="c1" placeholder="Barcelona"></div>
+        </div>
+      </div>
+      <div class="sepcol">
+        <div class="sepline"></div>
+        <div class="sepsym">♾</div>
+        <div class="sepline"></div>
+      </div>
+      <div class="pcol">
+        <p class="plabel">Segunda Persona</p>
+        <div class="fld"><label>Nombre</label><input type="text" id="n2" placeholder="Su nombre"></div>
+        <div class="fld"><label>Fecha de nacimiento</label><input type="date" id="d2" onchange="autoSign(2)"></div>
+        <div class="sign-show" id="sd2">— ingresa la fecha</div>
+        <div class="tog-row">
+          <div class="tog" id="tog2" onclick="togTime(2)"><div class="knob"></div></div>
+          <span class="tog-lbl">Incluir hora de nacimiento</span>
+        </div>
+        <div class="time-flds" id="tf2">
+          <div class="fld"><label>Hora</label><input type="time" id="t2"></div>
+          <div class="fld"><label>Ciudad</label><input type="text" id="c2" placeholder="Madrid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="form-foot">
+      <button class="btn btn-gold" onclick="startChat()">✦ &nbsp; Abrir consulta con el astrólogo</button>
+      <p class="form-note">Análisis generado por IA · La conversación tiene memoria completa de lo analizado</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CHAT ═══ -->
+<div id="sChat" class="screen hidden">
+  <div class="chat-header">
+    <div class="chat-header-left">
+      <div class="chat-av">✦</div>
+      <div>
+        <div class="chat-who-name">ASTRA · ASTRÓLOGO IA</div>
+        <div class="chat-who-sub">Astral Match · Sinastría profunda</div>
+      </div>
+    </div>
+    <span class="chat-pair" id="pairBadge"></span>
+    <button class="chat-back" onclick="goForm()">← Nueva consulta</button>
+  </div>
+
+  <div class="chat-msgs" id="chatMsgs">
+    <div class="msg-wrap" id="msgWrap"></div>
+  </div>
+
+  <div class="chat-input-bar">
+    <div class="input-row">
+      <div class="input-wrap">
+        <textarea id="chatInput" rows="1" placeholder="Pregunta sobre amor, karma, convivencia, o lo que necesites…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      </div>
+      <button class="send-btn" onclick="sendMsg()">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      </button>
+    </div>
+    <p class="input-hint">El astrólogo recuerda todo lo analizado · Puedes profundizar en cualquier aspecto</p>
+  </div>
+</div>
+
+<script>
+// ════════════════════════
+// CURSOR
+// ════════════════════════
+const cur=document.getElementById('cur'),curR=document.getElementById('curR');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=(mx-3.5)+'px';cur.style.top=(my-3.5)+'px';});
+(function a(){rx+=(mx-rx-14)*.12;ry+=(my-ry-14)*.12;curR.style.left=rx+'px';curR.style.top=ry+'px';requestAnimationFrame(a);})();
+function addCursorHover(sel){
+  document.querySelectorAll(sel).forEach(el=>{
+    el.addEventListener('mouseenter',()=>{cur.style.transform='scale(2)';curR.style.transform='scale(1.5)';curR.style.borderColor='rgba(201,168,76,.85)';});
+    el.addEventListener('mouseleave',()=>{cur.style.transform='scale(1)';curR.style.transform='scale(1)';curR.style.borderColor='rgba(201,168,76,.4)';});
+  });
+}
+addCursorHover('a,button,.tog');
+
+// ════════════════════════
+// STARFIELD
+// ════════════════════════
+const cv=document.getElementById('sf'),cx=cv.getContext('2d');
+let stars=[];
+function rsz(){cv.width=innerWidth;cv.height=innerHeight;}
+function initS(){stars=[];for(let i=0;i<200;i++)stars.push({x:Math.random()*cv.width,y:Math.random()*cv.height,r:Math.random()*1.3,a:Math.random(),ts:Math.random()*.014+.004,td:Math.random()>.5?1:-1});}
+function drawS(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  const bg=cx.createRadialGradient(cv.width*.5,cv.height*.25,0,cv.width*.5,cv.height*.5,cv.width*.85);
+  bg.addColorStop(0,'#0c0926');bg.addColorStop(.4,'#070716');bg.addColorStop(1,'#03030e');
+  cx.fillStyle=bg;cx.fillRect(0,0,cv.width,cv.height);
+  [[.15,.3,140,'rgba(55,25,105,.11)'],[.82,.65,230,'rgba(130,50,100,.07)']].forEach(([x,y,r,c])=>{
+    const n=cx.createRadialGradient(cv.width*x,cv.height*y,0,cv.width*x,cv.height*y,r);
+    n.addColorStop(0,c);n.addColorStop(1,'transparent');cx.fillStyle=n;cx.fillRect(0,0,cv.width,cv.height);
+  });
+  stars.forEach(s=>{s.a+=s.ts*s.td;if(s.a>=1||s.a<=.08)s.td*=-1;cx.beginPath();cx.arc(s.x,s.y,s.r,0,Math.PI*2);cx.fillStyle=`rgba(210,220,240,${s.a})`;cx.fill();});
+  requestAnimationFrame(drawS);
+}
+window.addEventListener('resize',()=>{rsz();initS();});
+rsz();initS();drawS();
+
+// ════════════════════════
+// ZODIAC WHEEL
+// ════════════════════════
+const ow=document.getElementById('orbitWrap');
+['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'].forEach((s,i)=>{
+  const el=document.createElement('span');el.className='zsym';
+  const rad=((i/12)*360-90)*Math.PI/180,r=100;
+  el.style.left=(110+r*Math.cos(rad)-9)+'px';el.style.top=(110+r*Math.sin(rad)-9)+'px';
+  el.textContent=s;ow.appendChild(el);
+});
+
+// ════════════════════════
+// SIGN DETECTION
+// ════════════════════════
+const SIGNS=[
+  {n:'Capricornio',s:'♑',el:'Tierra',m1:12,d1:22,m2:1,d2:19},
+  {n:'Acuario',s:'♒',el:'Aire',m1:1,d1:20,m2:2,d2:18},
+  {n:'Piscis',s:'♓',el:'Agua',m1:2,d1:19,m2:3,d2:20},
+  {n:'Aries',s:'♈',el:'Fuego',m1:3,d1:21,m2:4,d2:19},
+  {n:'Tauro',s:'♉',el:'Tierra',m1:4,d1:20,m2:5,d2:20},
+  {n:'Géminis',s:'♊',el:'Aire',m1:5,d1:21,m2:6,d2:20},
+  {n:'Cáncer',s:'♋',el:'Agua',m1:6,d1:21,m2:7,d2:22},
+  {n:'Leo',s:'♌',el:'Fuego',m1:7,d1:23,m2:8,d2:22},
+  {n:'Virgo',s:'♍',el:'Tierra',m1:8,d1:23,m2:9,d2:22},
+  {n:'Libra',s:'♎',el:'Aire',m1:9,d1:23,m2:10,d2:22},
+  {n:'Escorpio',s:'♏',el:'Agua',m1:10,d1:23,m2:11,d2:21},
+  {n:'Sagitario',s:'♐',el:'Fuego',m1:11,d1:22,m2:12,d2:21},
+];
+function getSign(dateStr){
+  if(!dateStr)return null;
+  const d=new Date(dateStr+'T12:00:00'),m=d.getMonth()+1,day=d.getDate();
+  for(const sg of SIGNS){if((m===sg.m1&&day>=sg.d1)||(m===sg.m2&&day<=sg.d2))return sg;}
+  return null;
+}
+function autoSign(n){
+  const sg=getSign(document.getElementById('d'+n).value);
+  const el=document.getElementById('sd'+n);
+  if(sg){el.textContent=sg.s+' '+sg.n+' · Elemento '+sg.el;el.classList.add('lit');}
+  else{el.textContent='— ingresa la fecha';el.classList.remove('lit');}
+}
+function togTime(n){
+  document.getElementById('tog'+n).classList.toggle('on');
+  document.getElementById('tf'+n).classList.toggle('open');
+}
+
+// ════════════════════════
+// NAVIGATION
+// ════════════════════════
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');window.scrollTo(0,0);}
+function goLanding(){show('sLanding');}
+function goForm(){show('sForm');}
+
+// ════════════════════════
+// CHAT STATE
+// ════════════════════════
+let history=[];
+let udata={};
+let busy=false;
+
+function startChat(){
+  const d1=document.getElementById('d1').value;
+  const d2=document.getElementById('d2').value;
+  const sg1=getSign(d1), sg2=getSign(d2);
+  if(!sg1||!sg2){alert('Por favor introduce las fechas de nacimiento de ambas personas.');return;}
+  udata={
+    n1:document.getElementById('n1').value||'Persona 1',
+    n2:document.getElementById('n2').value||'Persona 2',
+    d1,d2,sg1:sg1.n,sg2:sg2.n,el1:sg1.el,el2:sg2.el,sym1:sg1.s,sym2:sg2.s,
+    t1:document.getElementById('t1').value, t2:document.getElementById('t2').value,
+    c1:document.getElementById('c1').value, c2:document.getElementById('c2').value,
+  };
+  document.getElementById('pairBadge').textContent=`${udata.n1} ${udata.sym1}  ✦  ${udata.n2} ${udata.sym2}`;
+  document.getElementById('msgWrap').innerHTML='';
+  history=[];busy=false;
+  show('sChat');
+  doInitialAnalysis();
+}
+
+// ════════════════════════
+// SYSTEM PROMPT
+// ════════════════════════
+function sysPrompt(){
+  const u=udata;
+  const ti1=u.t1&&u.c1?`, hora ${u.t1} en ${u.c1}`:'';
+  const ti2=u.t2&&u.c2?`, hora ${u.t2} en ${u.c2}`:'';
+  return `Eres Astra, un astrólogo experto y sofisticado con décadas de experiencia en sinastría y cartas natales. Hablas directamente a la persona que consulta, con un tono cálido, inteligente y profundo.
+
+DATOS DE LA CONSULTA:
+- ${u.n1}: ${u.sg1} (${u.d1}${ti1}, elemento ${u.el1})
+- ${u.n2}: ${u.sg2} (${u.d2}${ti2}, elemento ${u.el2})
+${(u.t1&&u.c1)||(u.t2&&u.c2)?'Tienes hora de nacimiento: puedes referirte al ascendente y casas astrológicas.':'Sin hora de nacimiento: análisis basado en signos solares y dinámicas conocidas entre ellos.'}
+
+REGLAS DE ESTILO:
+- Escribe como un astrólogo real, no como un chatbot. Fluido, personal, ensayístico.
+- Usa **negrita** para conceptos clave. Usa *cursiva* para insights especiales o frases destacadas.
+- Usa ## para títulos de sección en análisis largos (ej: ## Donde encajáis bien).
+- Sé específico para ${u.sg1} y ${u.sg2}. Nunca genérico.
+- Cuando incluyas un veredicto final con puntuaciones, usa este formato exacto en una línea por área:
+SCORE::Mental::85
+SCORE::Emocional::70
+SCORE::Afectiva/Sexual::78
+SCORE::Largo plazo::80
+(ajusta los números según tu análisis real)
+- En el análisis inicial, al terminar añade exactamente:
+[QA:${u.n1.split(' ')[0]}|${u.n2.split(' ')[0]}]
+- Responde siempre en español.`;
+}
+
+// ════════════════════════
+// INITIAL ANALYSIS
+// ════════════════════════
+function doInitialAnalysis(){
+  const u=udata;
+  const prompt=`Haz el análisis completo de compatibilidad entre ${u.n1} (${u.sg1}, ${u.el1}) y ${u.n2} (${u.sg2}, ${u.el2}).
+
+Estructura el informe con estas secciones:
+
+## Compatibilidad global
+2-3 párrafos sobre la combinación. Honesto, no todo flores.
+
+## Donde encajáis bien
+2-3 puntos con título en negrita. Explica el mecanismo astrológico real.
+
+## Donde puede haber fricción
+2-3 puntos honestos. Qué puede complicar la relación y por qué.
+
+## Amor y atracción
+1-2 párrafos sobre la dimensión afectiva y sexual.
+
+## Comunicación y convivencia
+1-2 párrafos sobre el día a día.
+
+## Veredicto
+Párrafo final claro. Luego las puntuaciones con el formato SCORE.`;
+
+  showTyping();
+  callAI(prompt, true);
+}
+
+// ════════════════════════
+// SEND USER MSG
+// ════════════════════════
+function sendMsg(){
+  const inp=document.getElementById('chatInput');
+  const txt=inp.value.trim();
+  if(!txt||busy)return;
+  inp.value='';inp.style.height='auto';
+  renderMsg('user',txt);
+  history.push({role:'user',content:txt});
+  showTyping();
+  callAI(txt,false);
+}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+
+// ════════════════════════
+// API
+// ════════════════════════
+async function callAI(userMsg, isInit){
+  busy=true;
+  if(isInit) history.push({role:'user',content:userMsg});
+  try{
+    const res=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system:sysPrompt(),messages:history})
+    });
+    const data=await res.json();
+    const raw=data.content?.map(b=>b.text||'').join('')||'Lo siento, no pude generar el análisis. Inténtalo de nuevo.';
+    removeTyping();
+
+    // Parse QA trigger
+    const qaMatch=raw.match(/\[QA:([^\]]+)\]/);
+    const clean=raw.replace(/\[QA:[^\]]+\]/,'').trim();
+    history.push({role:'assistant',content:clean});
+    renderMsg('astro',clean, qaMatch?qaMatch[1]:null);
+  }catch(e){
+    removeTyping();
+    renderMsg('astro','*El cosmos está revuelto en este momento. Por favor, inténtalo de nuevo.*');
+  }
+  busy=false;
+}
+
+// ════════════════════════
+// RENDER
+// ════════════════════════
+function renderMsg(role, text, qaNames){
+  const wrap=document.getElementById('msgWrap');
+
+  // divider between astro replies
+  if(wrap.children.length>0 && role==='astro'){
+    const dv=document.createElement('div');
+    dv.className='chat-div';
+    dv.innerHTML='<div class="chat-div-line"></div><span class="chat-div-sym">✦</span><div class="chat-div-line"></div>';
+    wrap.appendChild(dv);
+  }
+
+  const msg=document.createElement('div');
+  msg.className=`msg ${role}`;
+
+  const av=document.createElement('div');
+  av.className='mavatar';
+  av.textContent=role==='astro'?'✦':'👤';
+
+  const bub=document.createElement('div');
+  bub.className='mbubble';
+
+  const nm=document.createElement('div');
+  nm.className='mname';
+  nm.textContent=role==='astro'?'ASTRA · ASTRÓLOGO IA':(udata.n1||'TÚ').toUpperCase();
+
+  const body=document.createElement('div');
+  body.className='mbody';
+  body.innerHTML=role==='astro'?mdToHtml(text):esc(text);
+
+  bub.appendChild(nm);
+  bub.appendChild(body);
+
+  // Quick action buttons (after initial analysis)
+  if(qaNames){
+    const qa=document.createElement('div');
+    qa.className='quick-actions';
+    const names=qaNames.split('|');
+    const labels=[
+      `✦ Carta de ${names[0]}`,
+      `✦ Carta de ${names[1]}`,
+      `✦ Compatibilidad conjunta en profundidad`
+    ];
+    const keys=['carta1','carta2','conjunta'];
+    labels.forEach((lbl,i)=>{
+      const btn=document.createElement('button');
+      btn.className='qa-btn';
+      btn.textContent=lbl;
+      btn.onclick=()=>handleQA(keys[i],names,btn);
+      qa.appendChild(btn);
+    });
+    bub.appendChild(qa);
+    setTimeout(()=>addCursorHover('.qa-btn'),100);
+  }
+
+  msg.appendChild(av);
+  msg.appendChild(bub);
+  wrap.appendChild(msg);
+  scrollBot();
+}
+
+function handleQA(key, names, btn){
+  document.querySelectorAll('.qa-btn').forEach(b=>{b.disabled=true;});
+  const u=udata;
+  let prompt='', label='';
+
+  if(key==='carta1'){
+    label=`Carta de ${u.n1}`;
+    const ti=u.t1&&u.c1?`, hora ${u.t1} en ${u.c1}`:'';
+    prompt=`Haz ahora la lectura de carta natal individual de ${u.n1} (${u.sg1}, ${u.el1}, nacida el ${u.d1}${ti}).
+
+Quiero un análisis profundo con estas secciones:
+## Personalidad y esencia solar
+Cómo es, qué la mueve, su luz y su sombra como ${u.sg1}.
+
+## Amor y relaciones (Venus)
+Cómo ama, qué busca en pareja, patrones afectivos de ${u.sg1}.
+
+## Mente y comunicación (Mercurio)
+Cómo piensa, habla y procesa la realidad.
+
+## Energía y acción
+Cómo actúa en el mundo, su motor interno.
+
+## Propósito y potencial
+Un párrafo final sobre lo que ${u.n1} puede llegar a ser si trabaja su carta.
+
+Sé específico para ${u.sg1} y habla directamente de ${u.n1}.`;
+  } else if(key==='carta2'){
+    label=`Carta de ${u.n2}`;
+    const ti=u.t2&&u.c2?`, hora ${u.t2} en ${u.c2}`:'';
+    prompt=`Haz ahora la lectura de carta natal individual de ${u.n2} (${u.sg2}, ${u.el2}, nacida el ${u.d2}${ti}).
+
+Quiero un análisis profundo con estas secciones:
+## Personalidad y esencia solar
+Cómo es, qué la mueve, su luz y su sombra como ${u.sg2}.
+
+## Amor y relaciones (Venus)
+Cómo ama, qué busca en pareja, patrones afectivos de ${u.sg2}.
+
+## Mente y comunicación (Mercurio)
+Cómo piensa, habla y procesa la realidad.
+
+## Energía y acción
+Cómo actúa en el mundo, su motor interno.
+
+## Propósito y potencial
+Un párrafo final sobre lo que ${u.n2} puede llegar a ser si trabaja su carta.
+
+Sé específico para ${u.sg2} y habla directamente de ${u.n2}.`;
+  } else {
+    label='Compatibilidad conjunta en profundidad';
+    prompt=`Profundiza ahora en ${u.n1} y ${u.n2} como pareja-unidad, más allá de la compatibilidad individual.
+
+## El arquetipo de esta pareja
+¿Qué tipo de pareja forman? ¿Cuál es su naturaleza como unidad?
+
+## Lo que crean juntos
+¿Qué sinergia producen que ninguno tendría solo? ¿En qué se potencian?
+
+## El reto central
+¿Cuál es el conflicto o tensión principal que deberán aprender a navegar?
+
+## Qué necesita cada uno del otro
+Sé concreto: qué necesita ${u.n1} de ${u.n2} y viceversa para que esto funcione.
+
+## Proyección de largo plazo
+Si cultivan lo mejor de esta unión, ¿a dónde pueden llegar? ¿Qué pueden construir?
+
+Habla de ellos como una unidad. Tono profundo, honesto y esperanzador sin ser ingenuo.`;
+  }
+
+  renderMsg('user', label.replace('✦ ',''));
+  history.push({role:'user',content:prompt});
+  showTyping();
+  callAI(prompt, false);
+}
+
+function showTyping(){
+  const wrap=document.getElementById('msgWrap');
+  const t=document.createElement('div');
+  t.id='typingInd';t.className='msg astro';
+  t.innerHTML=`<div class="mavatar">✦</div><div class="mbubble"><div class="mname">ASTRA · ASTRÓLOGO IA</div><div class="typing-row"><span></span><span></span><span></span></div></div>`;
+  wrap.appendChild(t);scrollBot();
+}
+function removeTyping(){const t=document.getElementById('typingInd');if(t)t.remove();}
+function scrollBot(){const m=document.getElementById('chatMsgs');setTimeout(()=>m.scrollTo({top:m.scrollHeight,behavior:'smooth'}),60);}
+
+// ════════════════════════
+// MARKDOWN → HTML
+// ════════════════════════
+function mdToHtml(txt){
+  // parse SCORE lines first
+  let scores=[];
+  txt=txt.replace(/^SCORE::(.+?)::(\d+)$/gm,(_,label,val)=>{scores.push({label,val:parseInt(val)});return '';});
+
+  let html=txt
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^## (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*\n]+)\*/g,'<em>$1</em>')
+    .replace(/^> (.+)$/gm,'<div class="verdict">$1</div>')
+    .replace(/^[-•] (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>\n?)+/g,m=>`<ul>${m}</ul>`)
+    .replace(/\n\n+/g,'|||')
+    .split('|||')
+    .map(chunk=>chunk.trim())
+    .filter(Boolean)
+    .map(chunk=>{
+      if(chunk.startsWith('<h3')||chunk.startsWith('<ul')||chunk.startsWith('<div class="verdict"'))return chunk;
+      return `<p>${chunk.replace(/\n/g,' ')}</p>`;
+    })
+    .join('\n');
+
+  // inject score grid
+  if(scores.length>0){
+    const grid=`<div class="score-grid">${scores.map(sc=>`<div class="score-cell"><span class="score-label">${sc.label}</span><span class="score-val">${sc.val}%</span></div>`).join('')}</div>`;
+    html+=grid;
+  }
+  return html;
+}
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// INIT
+show('sLanding');
+</script>
+</body>
+</html>
